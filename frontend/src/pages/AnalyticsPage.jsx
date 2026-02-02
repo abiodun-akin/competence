@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 export default function AnalyticsPage({ operators, standards }) {
   const [rotationData, setRotationData] = useState([]);
   const [standardsData, setStandardsData] = useState([]);
@@ -13,8 +15,8 @@ export default function AnalyticsPage({ operators, standards }) {
     setLoading(true);
     try {
       const [rotRes, stdRes] = await Promise.all([
-        fetch("http://localhost:3000/api/analytics/rotation"),
-        fetch("http://localhost:3000/api/analytics/standards"),
+        fetch(`${API_BASE_URL}/api/analytics/rotation`),
+        fetch(`${API_BASE_URL}/api/analytics/standards`),
       ]);
       const rotData = await rotRes.json();
       const stdData = await stdRes.json();

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 export default function SetupPage() {
   const [tab, setTab] = useState("standards");
   const [competencies, setCompetencies] = useState([]);
@@ -17,10 +19,10 @@ export default function SetupPage() {
     setLoading(true);
     try {
       const [compRes, teamRes, qualRes, stdRes] = await Promise.all([
-        fetch("http://localhost:3000/api/setup/competencies"),
-        fetch("http://localhost:3000/api/setup/teams"),
-        fetch("http://localhost:3000/api/setup/qualifications"),
-        fetch("http://localhost:3000/api/standards"),
+        fetch(`${API_BASE_URL}/api/setup/competencies`),
+        fetch(`${API_BASE_URL}/api/setup/teams`),
+        fetch(`${API_BASE_URL}/api/setup/qualifications`),
+        fetch(`${API_BASE_URL}/api/standards`),
       ]);
       const compData = await compRes.json();
       const teamData = await teamRes.json();
@@ -41,12 +43,12 @@ export default function SetupPage() {
 
     let endpoint = "";
     if (tab === "competencies")
-      endpoint = "http://localhost:3000/api/setup/competencies";
+      endpoint = `${API_BASE_URL}/api/setup/competencies`;
     else if (tab === "teams")
-      endpoint = "http://localhost:3000/api/setup/teams";
+      endpoint = `${API_BASE_URL}/api/setup/teams`;
     else if (tab === "standards")
-      endpoint = "http://localhost:3000/api/standards";
-    else endpoint = "http://localhost:3000/api/setup/qualifications";
+      endpoint = `${API_BASE_URL}/api/standards`;
+    else endpoint = `${API_BASE_URL}/api/setup/qualifications`;
 
     try {
       const response = await fetch(endpoint, {
@@ -66,12 +68,12 @@ export default function SetupPage() {
   const handleDelete = async (id) => {
     let endpoint = "";
     if (tab === "competencies")
-      endpoint = `http://localhost:3000/api/setup/competencies/${id}`;
+      endpoint = `${API_BASE_URL}/api/setup/competencies/${id}`;
     else if (tab === "teams")
-      endpoint = `http://localhost:3000/api/setup/teams/${id}`;
+      endpoint = `${API_BASE_URL}/api/setup/teams/${id}`;
     else if (tab === "standards")
-      endpoint = `http://localhost:3000/api/standards/${id}`;
-    else endpoint = `http://localhost:3000/api/setup/qualifications/${id}`;
+      endpoint = `${API_BASE_URL}/api/standards/${id}`;
+    else endpoint = `${API_BASE_URL}/api/setup/qualifications/${id}`;
 
     try {
       const response = await fetch(endpoint, { method: "DELETE" });
