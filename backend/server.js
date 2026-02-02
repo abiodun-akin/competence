@@ -208,53 +208,95 @@ app.delete("/api/setup/competencies/:id", (req, res) => {
 });
 
 // ===== Standards =====
-app.get("/api/standards", (req, res) => res.json(standards));
-app.post("/api/standards", (req, res) => {
-  const { name, department, criticality } = req.body;
-  if (!name) return res.status(400).json({ error: "Name required" });
-  const newStandard = {
-    _id: name.toLowerCase().replace(/\s+/g, "-"),
-    name,
-    department: department || "",
-    criticality: criticality || "medium",
-  };
-  standards.push(newStandard);
-  res.json(newStandard);
+app.get("/api/standards", async (req, res) => {
+  try {
+    const data = await getCollection('standards', standards);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
-app.put("/api/standards/:id", (req, res) => {
-  const standard = standards.find((s) => s._id === req.params.id);
-  if (!standard) return res.status(404).json({ error: "Not found" });
-  Object.assign(standard, req.body);
-  res.json(standard);
+
+app.post("/api/standards", async (req, res) => {
+  try {
+    const { name, department, criticality } = req.body;
+    if (!name) return res.status(400).json({ error: "Name required" });
+    const newStandard = {
+      _id: name.toLowerCase().replace(/\s+/g, "-"),
+      name,
+      department: department || "",
+      criticality: criticality || "medium",
+    };
+    const result = await insertOne('standards', newStandard, standards);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
-app.delete("/api/standards/:id", (req, res) => {
-  standards = standards.filter((s) => s._id !== req.params.id);
-  res.json({ success: true });
+
+app.put("/api/standards/:id", async (req, res) => {
+  try {
+    const result = await updateOne('standards', { _id: req.params.id }, req.body, standards);
+    if (!result) return res.status(404).json({ error: "Not found" });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/standards/:id", async (req, res) => {
+  try {
+    await deleteOne('standards', { _id: req.params.id }, standards);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Setup standards (same as above)
-app.get("/api/setup/standards", (req, res) => res.json(standards));
-app.post("/api/setup/standards", (req, res) => {
-  const { name, department, criticality } = req.body;
-  if (!name) return res.status(400).json({ error: "Name required" });
-  const newStandard = {
-    _id: name.toLowerCase().replace(/\s+/g, "-"),
-    name,
-    department: department || "",
-    criticality: criticality || "medium",
-  };
-  standards.push(newStandard);
-  res.json(newStandard);
+app.get("/api/setup/standards", async (req, res) => {
+  try {
+    const data = await getCollection('standards', standards);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
-app.put("/api/setup/standards/:id", (req, res) => {
-  const standard = standards.find((s) => s._id === req.params.id);
-  if (!standard) return res.status(404).json({ error: "Not found" });
-  Object.assign(standard, req.body);
-  res.json(standard);
+
+app.post("/api/setup/standards", async (req, res) => {
+  try {
+    const { name, department, criticality } = req.body;
+    if (!name) return res.status(400).json({ error: "Name required" });
+    const newStandard = {
+      _id: name.toLowerCase().replace(/\s+/g, "-"),
+      name,
+      department: department || "",
+      criticality: criticality || "medium",
+    };
+    const result = await insertOne('standards', newStandard, standards);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
-app.delete("/api/setup/standards/:id", (req, res) => {
-  standards = standards.filter((s) => s._id !== req.params.id);
-  res.json({ success: true });
+
+app.put("/api/setup/standards/:id", async (req, res) => {
+  try {
+    const result = await updateOne('standards', { _id: req.params.id }, req.body, standards);
+    if (!result) return res.status(404).json({ error: "Not found" });
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/setup/standards/:id", async (req, res) => {
+  try {
+    await deleteOne('standards', { _id: req.params.id }, standards);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // ===== Teams =====
@@ -353,12 +395,9 @@ app.get("/api/analytics/rotation", (req, res) => {
     operatorId: op._id,
     name: op.name,
     totalAssignments: op.totalAssignments,
-    // More meaningful utilization estimation:
-    // Rough: assuming ~220 working days/year → ~4.6 weeks per assignment if full week
     utilizationRate: Math.min(100, Math.round(op.totalAssignments * 4.6)),
     competenceCount: op.competences.length,
   }));
-
   res.json(analytics);
 });
 
@@ -380,7 +419,6 @@ app.get("/api/analytics/standards", (req, res) => {
       criticality: std.criticality,
     };
   });
-
   res.json(standardsAnalytics);
 });
 

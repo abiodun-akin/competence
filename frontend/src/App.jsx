@@ -9,6 +9,8 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import SetupPage from "./pages/SetupPage";
 import RotationPage from "./pages/RotationPage";
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
@@ -33,8 +35,8 @@ export default function App() {
   const fetchData = async () => {
     try {
       const [opsRes, stdRes] = await Promise.all([
-        fetch("http://localhost:3000/api/operators"),
-        fetch("http://localhost:3000/api/standards"),
+        fetch(`${API_BASE_URL}/api/operators`),
+        fetch(`${API_BASE_URL}/api/standards`),
       ]);
 
       if (!opsRes.ok || !stdRes.ok) throw new Error("Failed to fetch data");
