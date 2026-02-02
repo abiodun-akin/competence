@@ -378,3 +378,124 @@ app.get("/api/analytics/standards", (req, res) => {
       totalDays,
       operatorCount,
       criticality: std.criticality,
+    };
+  });
+  res.json(standardsAnalytics);
+});
+
+// ===== Rotations =====
+app.get("/api/rotation", (req, res) => res.json(rotations));
+app.get("/api/rotation/:id", (req, res) => {
+  const rotation = rotations.find((r) => r._id === req.params.id);
+  if (!rotation) return res.status(404).json({ error: "Rotation not found" });
+  res.json(rotation);
+});
+app.post("/api/rotation", (req, res) => {
+  const {
+    fromOperatorId,
+    toOperatorId,
+    standard,
+    reason,
+    scheduledDate,
+    isAutomatic,
+  } = req.body;
+
+  if (!fromOperatorId || !toOperatorId || !standard)
+    return res.status(400).json({ error: "Missing required fields" });
+
+  const newRotation = {
+    _id: Date.now().toString(),
+    fromOperatorId,
+    toOperatorId,
+    standard,
+    reason: reason || "Manual rotation",
+    scheduledDate,
+    isAutomatic: !!isAutomatic,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  };
+  rotations.push(newRotation);
+  res.json(newRotation);
+});
+app.put("/api/rotation/:id", (req, res) => {
+  const rotation = rotations.find((r) => r._id === req.params.id);
+  if (!rotation) return res.status(404).json({ error: "Rotation not found" });
+  Object.assign(rotation, req.body);
+  res.json(rotation);
+});
+app.delete("/api/rotation/:id", (req, res) => {
+  rotations = rotations.filter((r) => r._id !== req.params.id);
+  res.json({ success: true });
+});
+
+// Auto-rotation suggestions
+app.post("/api/rotation/auto/generate", (req, res) => {
+  const suggestions = [];
+  const highUtil = operators.filter((op) => op.totalAssignments >= 14);
+
+  highUtil.forEach((op) => {
+    op.competences.forEach((comp) => {
+      const candidates = operators.filter(
+        (other) =>
+          other._id !== op._id &&
+          other.competences.some((c) => c.standard === comp.standard) &&
+          other.totalAssignments < op.totalAssignments - 2,
+      );
+
+      candidates.forEach((target) => {
+        suggestions.push({
+          fromOperatorId: op._id,
+          fromName: op.name,
+          toOperatorId: target._id,
+          toName: target.name,
+          standard: comp.standard,
+          reason: "Workload balancing - high utilization detected",
+          isAutomatic: true,
+          priority:
+            op.totalAssignments - target.totalAssignments > 5
+              ? "high"
+              : "medium",
+        });
+      });
+    });
+  });
+
+  res.json(suggestions);
+});
+
+// ===== Health check =====
+app.get("/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    service: "backend",
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      auth: "/api/auth",
+      operators: "/api/operators",
+      standards: "/api/standards",
+      planning: "/api/planning/weeks",
+      analytics: "/api/analytics",
+      rotation: "/api/rotation",
+    },
+  });
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.stack);
+  res.status(500).json({
+    error: 'Internal Server Error',
+    message: err.message
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`✓ Backend running on port ${PORT}`);
+  console.log(`Try: http://localhost:${PORT}/api/health`);
+  console.log(`     http://localhost:${PORT}/api/analytics/rotation`);
+});
