@@ -2,8 +2,17 @@ import express from "express";
 import cors from "cors";
 
 const app = express();
-app.use(cors());
+const cors = require('cors');
+
+//app.use(cors());
+
+app.use(cors({
+  origin: 'https://competence-frontend.onrender.com',
+  credentials: true,  // if using cookies/auth tokens
+}));
+
 app.use(express.json());
+
 
 // ===== In-memory data stores =====
 let operators = [
