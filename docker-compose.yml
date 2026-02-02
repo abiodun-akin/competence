@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  backend:
+    build: ./backend
+    ports: ["3000:3000"]
+    depends_on: [mongo]
+    networks:
+      - default
+  frontend:
+    build: ./frontend
+    ports: ["8080:80"]
+    depends_on: [backend]
+    networks:
+      - default
+  mongo:
+    image: mongo:6
+    volumes: [mongo_data:/data/db]
+volumes:
+  mongo_data:
