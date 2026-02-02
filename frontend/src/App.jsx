@@ -32,24 +32,50 @@ export default function App() {
     }
   }, []);
 
-  const fetchData = async () => {
+  const fetchWithErrorHandling = async (url) => {
     try {
-      const [opsRes, stdRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/operators`),
-        fetch(`${API_BASE_URL}/api/standards`),
+      const res = await fetch(url, {
+        method: 'GET',
+        mode: 'cors',                    // Explicitly set CORS mode
+        credentials: 'same-origin',      // Safe default
+      });
+
+      if (!res.ok) {
+        let errorMessage = `${res.status} ${res.statusText}`;
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          // Could not parse JSON → fallback to status text
+        }
+        throw new Error(`Fetch failed for ${url.split('/').pop()}: ${errorMessage}`);
+      }
+
+      return await res.json();
+    } catch (err) {
+      console.error(`Detailed fetch error for ${url}:`, err);
+      throw err; // Re-throw so Promise.all can catch it
+    }
+  };
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [opsData, stdData] = await Promise.all([
+        fetchWithErrorHandling(`${API_BASE_URL}/api/operators`),
+        fetchWithErrorHandling(`${API_BASE_URL}/api/standards`),
       ]);
-
-      if (!opsRes.ok || !stdRes.ok) throw new Error("Failed to fetch data");
-
-      const opsData = await opsRes.json();
-      const stdData = await stdRes.json();
 
       setOperators(opsData);
       setStandards(stdData);
       setError(null);
-      setLoading(false);
     } catch (err) {
-      setError(err.message);
+      const errorMsg = err.message || "Unknown error during data fetch";
+      console.error("Data loading failed:", err);
+      setError(errorMsg);
+    } finally {
       setLoading(false);
     }
   };
@@ -66,16 +92,37 @@ export default function App() {
     setCurrentUser(null);
     localStorage.removeItem("authToken");
     localStorage.removeItem("currentUser");
+    setError(null); // Clear any previous errors on logout
   };
 
   const renderPage = () => {
-    if (loading && currentPage !== "setup")
+    if (loading && currentPage !== "setup") {
       return (
         <div className="loading">
-          <div className="spinner"></div>Loading...
+          <div className="spinner"></div>
+          Loading data...
         </div>
       );
-    if (error) return <div className="error-message">⚠ Error: {error}</div>;
+    }
+
+    if (error) {
+      return (
+        <div className="error-message" style={{ color: 'red', padding: '20px', textAlign: 'center' }}>
+          <strong>⚠ Connection / Data Error</strong>
+          <br />
+          {error}
+          <br /><br />
+          <small>(Check browser console (F12 → Console) for more details)</small>
+          <br />
+          <button 
+            onClick={() => { setError(null); fetchData(); }} 
+            style={{ marginTop: '10px', padding: '8px 16px' }}
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
 
     switch (currentPage) {
       case "dashboard":
