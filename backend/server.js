@@ -5,7 +5,7 @@ const app = express();
 
 // CORS - using wildcard temporarily to rule out origin issues
 app.use(cors({
-  origin: '*',                          // ← TEMPORARY for testing! Change back to 'https://competence-frontend.onrender.com' later
+  origin: '*',                          // ← TEMPORARY testing! Change back to 'https://competence-frontend.onrender.com' later
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
