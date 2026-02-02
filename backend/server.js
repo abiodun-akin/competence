@@ -2,17 +2,22 @@ import express from "express";
 import cors from "cors";
 
 const app = express();
-const cors = require('cors');
 
-//app.use(cors());
-
+// CORS - placed early
 app.use(cors({
-  origin: 'https://competence-frontend.onrender.com',
-  credentials: true,  // if using cookies/auth tokens
+  origin: 'https://competence-frontend.onrender.com',  // your frontend URL
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 
-app.use(express.json());
+// Optional: Log every request for debugging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url} - ${new Date().toISOString()}`);
+  next();
+});
 
+app.use(express.json());
 
 // ===== In-memory data stores =====
 let operators = [
@@ -216,97 +221,39 @@ app.delete("/api/setup/competencies/:id", (req, res) => {
   res.json({ success: true });
 });
 
-// ===== Standards =====
-app.get("/api/standards", async (req, res) => {
-  try {
-    const data = await getCollection('standards', standards);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+// ===== Standards (fixed - in-memory) =====
+app.get("/api/standards", (req, res) => res.json(standards));
+
+app.post("/api/standards", (req, res) => {
+  const { name, department, criticality } = req.body;
+  if (!name) return res.status(400).json({ error: "Name required" });
+  const newStandard = {
+    _id: name.toLowerCase().replace(/\s+/g, "-"),
+    name,
+    department: department || "",
+    criticality: criticality || "medium",
+  };
+  standards.push(newStandard);
+  res.json(newStandard);
 });
 
-app.post("/api/standards", async (req, res) => {
-  try {
-    const { name, department, criticality } = req.body;
-    if (!name) return res.status(400).json({ error: "Name required" });
-    const newStandard = {
-      _id: name.toLowerCase().replace(/\s+/g, "-"),
-      name,
-      department: department || "",
-      criticality: criticality || "medium",
-    };
-    const result = await insertOne('standards', newStandard, standards);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+app.put("/api/standards/:id", (req, res) => {
+  const std = standards.find((s) => s._id === req.params.id);
+  if (!std) return res.status(404).json({ error: "Not found" });
+  Object.assign(std, req.body);
+  res.json(std);
 });
 
-app.put("/api/standards/:id", async (req, res) => {
-  try {
-    const result = await updateOne('standards', { _id: req.params.id }, req.body, standards);
-    if (!result) return res.status(404).json({ error: "Not found" });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+app.delete("/api/standards/:id", (req, res) => {
+  const index = standards.findIndex((s) => s._id === req.params.id);
+  if (index === -1) return res.status(404).json({ error: "Not found" });
+  standards.splice(index, 1);
+  res.json({ success: true });
 });
 
-app.delete("/api/standards/:id", async (req, res) => {
-  try {
-    await deleteOne('standards', { _id: req.params.id }, standards);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Setup standards (same as above)
-app.get("/api/setup/standards", async (req, res) => {
-  try {
-    const data = await getCollection('standards', standards);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post("/api/setup/standards", async (req, res) => {
-  try {
-    const { name, department, criticality } = req.body;
-    if (!name) return res.status(400).json({ error: "Name required" });
-    const newStandard = {
-      _id: name.toLowerCase().replace(/\s+/g, "-"),
-      name,
-      department: department || "",
-      criticality: criticality || "medium",
-    };
-    const result = await insertOne('standards', newStandard, standards);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.put("/api/setup/standards/:id", async (req, res) => {
-  try {
-    const result = await updateOne('standards', { _id: req.params.id }, req.body, standards);
-    if (!result) return res.status(404).json({ error: "Not found" });
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.delete("/api/setup/standards/:id", async (req, res) => {
-  try {
-    await deleteOne('standards', { _id: req.params.id }, standards);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+// Alias for setup routes (using same data)
+app.get("/api/setup/standards", (req, res) => res.json(standards));
+// You can copy the post/put/delete from above and prefix /api/setup/standards if you need separate logic
 
 // ===== Teams =====
 app.get("/api/setup/teams", (req, res) => res.json(teams));
@@ -532,6 +479,14 @@ app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.stack);
+  res.status(500).json({ 
+    error: 'Internal Server Error', 
+    message: err.message 
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
