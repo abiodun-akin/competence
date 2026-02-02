@@ -10,19 +10,16 @@ export default function LoginPage({ onLogin }) {
     e.preventDefault();
     setError("");
     setLoading(true);
-
     try {
       const res = await fetch("http://localhost:3000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Login failed");
       }
-
       const data = await res.json();
       localStorage.setItem("authToken", data.token);
       onLogin(data.user);
@@ -35,14 +32,13 @@ export default function LoginPage({ onLogin }) {
 
   return (
     <div className="login-page">
-      <div className="login-container">
-        <div className="login-header">
-          <h1>🔧 Competence Planning Tool</h1>
+      <div className="login-container modern-login">
+        <div className="login-header modern-login-header">
+          <h1>Competence Planning Tool</h1>
           <p>Workforce Allocation & Rotation Management</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="login-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className="login-form modern-login-form">
+          <div className="form-group modern-form-group">
             <label htmlFor="username">Username</label>
             <input
               id="username"
@@ -51,10 +47,10 @@ export default function LoginPage({ onLogin }) {
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter username"
               disabled={loading}
+              autoFocus
             />
           </div>
-
-          <div className="form-group">
+          <div className="form-group modern-form-group">
             <label htmlFor="password">Password</label>
             <input
               id="password"
@@ -65,13 +61,10 @@ export default function LoginPage({ onLogin }) {
               disabled={loading}
             />
           </div>
-
-          {error && <div className="error-alert">{error}</div>}
-
+          {error && <div className="error-message">{error}</div>}
           <button type="submit" className="btn-login" disabled={loading}>
             {loading ? "Logging in..." : "Login"}
           </button>
-
           <div className="demo-credentials">
             <h3>Demo Credentials:</h3>
             <p>

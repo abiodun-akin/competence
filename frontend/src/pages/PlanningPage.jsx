@@ -5,6 +5,23 @@ export default function PlanningPage({ operators, standards }) {
   const [year, setYear] = useState(2026);
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [teamOptions, setTeamOptions] = useState([]);
+  const [standardOptions, setStandardOptions] = useState([]);
+
+  useEffect(() => {
+    fetchSetupOptions();
+  }, []);
+
+  const fetchSetupOptions = async () => {
+    try {
+      const [teamsRes, standardsRes] = await Promise.all([
+        fetch("http://localhost:3000/api/setup/teams"),
+        fetch("http://localhost:3000/api/setup/standards"),
+      ]);
+      setTeamOptions(await teamsRes.json());
+      setStandardOptions(await standardsRes.json());
+    } catch (err) {}
+  };
 
   useEffect(() => {
     fetchWeekAssignments();
@@ -14,7 +31,7 @@ export default function PlanningPage({ operators, standards }) {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3000/api/planning/weeks/${week}/${year}`
+        `http://localhost:3000/api/planning/weeks/${week}/${year}`,
       );
       const data = await response.json();
       setAssignments(data.assignments || []);
@@ -27,7 +44,7 @@ export default function PlanningPage({ operators, standards }) {
   const handleAddAssignment = () => {
     const newAssignment = {
       operatorId: operators[0]?._id,
-      standard: standards[0]?._id,
+      standard: standardOptions[0]?.name || "",
       days: 1,
       rotationScore: 0,
     };
@@ -53,7 +70,7 @@ export default function PlanningPage({ operators, standards }) {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ assignments }),
-        }
+        },
       );
       if (response.ok) {
         alert("Assignments saved successfully");
@@ -67,7 +84,7 @@ export default function PlanningPage({ operators, standards }) {
   const getOperatorName = (id) =>
     operators.find((op) => op._id === id)?.name || "Unknown";
   const getStandardName = (id) =>
-    standards.find((std) => std._id === id)?.name || "Unknown";
+    standardOptions.find((std) => std.id === id)?.name || "Unknown";
 
   return (
     <div className="planning-page">
@@ -131,7 +148,11 @@ export default function PlanningPage({ operators, standards }) {
                       <select
                         value={assign.operatorId}
                         onChange={(e) =>
-                          handleUpdateAssignment(idx, "operatorId", e.target.value)
+                          handleUpdateAssignment(
+                            idx,
+                            "operatorId",
+                            e.target.value,
+                          )
                         }
                       >
                         {operators.map((op) => (
@@ -145,11 +166,16 @@ export default function PlanningPage({ operators, standards }) {
                       <select
                         value={assign.standard}
                         onChange={(e) =>
-                          handleUpdateAssignment(idx, "standard", e.target.value)
+                          handleUpdateAssignment(
+                            idx,
+                            "standard",
+                            e.target.value,
+                          )
                         }
                       >
-                        {standards.map((std) => (
-                          <option key={std._id} value={std._id}>
+                        <option value="">Select standard...</option>
+                        {standardOptions.map((std) => (
+                          <option key={std.id} value={std.name}>
                             {std.name}
                           </option>
                         ))}
@@ -165,7 +191,7 @@ export default function PlanningPage({ operators, standards }) {
                           handleUpdateAssignment(
                             idx,
                             "days",
-                            parseInt(e.target.value)
+                            parseInt(e.target.value),
                           )
                         }
                         style={{ width: "60px" }}
@@ -180,7 +206,7 @@ export default function PlanningPage({ operators, standards }) {
                           handleUpdateAssignment(
                             idx,
                             "rotationScore",
-                            parseFloat(e.target.value)
+                            parseFloat(e.target.value),
                           )
                         }
                         style={{ width: "80px" }}
@@ -199,7 +225,10 @@ export default function PlanningPage({ operators, standards }) {
               </tbody>
             </table>
             <div style={{ marginTop: "15px" }}>
-              <button onClick={handleAddAssignment} style={{ marginRight: "10px" }}>
+              <button
+                onClick={handleAddAssignment}
+                style={{ marginRight: "10px" }}
+              >
                 + Add Assignment
               </button>
               <button onClick={handleSave}>Save Assignments</button>

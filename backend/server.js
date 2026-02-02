@@ -5,7 +5,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// In-memory data stores
+// ===== In-memory data stores =====
 let operators = [
   {
     _id: "1",
@@ -84,7 +84,6 @@ let weeklyAssignments = [
   },
 ];
 
-// Setup data stores
 let competencies = [
   { id: "1", name: "Welding" },
   { id: "2", name: "Assembly" },
@@ -104,28 +103,47 @@ let qualifications = [
   { id: "3", name: "Expert" },
 ];
 
-// Authentication - simple in-memory users
 let users = [
   { id: "1", username: "admin", password: "admin123", role: "admin" },
   { id: "2", username: "manager", password: "manager123", role: "manager" },
   { id: "3", username: "operator", password: "operator123", role: "operator" },
 ];
 
-let rotations = [];
+let rotations = [
+  {
+    _id: "r1",
+    fromOperatorId: "2",
+    toOperatorId: "1",
+    standard: "Assembly",
+    reason: "Workload balancing - High utilization detected",
+    scheduledDate: "2026-02-10",
+    isAutomatic: true,
+    status: "pending",
+    createdAt: "2026-02-01T10:00:00.000Z",
+  },
+  {
+    _id: "r2",
+    fromOperatorId: "2",
+    toOperatorId: "3",
+    standard: "Testing",
+    reason: "Workload balancing - High utilization detected",
+    scheduledDate: "2026-02-11",
+    isAutomatic: true,
+    status: "pending",
+    createdAt: "2026-02-01T10:05:00.000Z",
+  },
+];
 
-// Authentication endpoints
+// ===== Authentication =====
 app.post("/api/auth/login", (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) {
+  if (!username || !password)
     return res.status(400).json({ error: "Username and password required" });
-  }
 
   const user = users.find(
     (u) => u.username === username && u.password === password,
   );
-  if (!user) {
-    return res.status(401).json({ error: "Invalid credentials" });
-  }
+  if (!user) return res.status(401).json({ error: "Invalid credentials" });
 
   const token = Buffer.from(
     JSON.stringify({ id: user.id, username: user.username, role: user.role }),
@@ -141,17 +159,13 @@ app.post("/api/auth/logout", (req, res) => {
   res.json({ success: true });
 });
 
-// Operators endpoints
-app.get("/api/operators", (req, res) => {
-  res.json(operators);
-});
-
+// ===== Operators =====
+app.get("/api/operators", (req, res) => res.json(operators));
 app.get("/api/operators/:id", (req, res) => {
   const op = operators.find((o) => o._id === req.params.id);
   if (!op) return res.status(404).json({ error: "Operator not found" });
   res.json(op);
 });
-
 app.post("/api/operators", (req, res) => {
   const newOperator = {
     _id: Date.now().toString(),
@@ -162,107 +176,19 @@ app.post("/api/operators", (req, res) => {
   operators.push(newOperator);
   res.json(newOperator);
 });
-
 app.put("/api/operators/:id", (req, res) => {
   const op = operators.find((o) => o._id === req.params.id);
   if (!op) return res.status(404).json({ error: "Operator not found" });
   Object.assign(op, req.body);
   res.json(op);
 });
-
 app.delete("/api/operators/:id", (req, res) => {
   operators = operators.filter((o) => o._id !== req.params.id);
   res.json({ success: true });
 });
 
-// Standards endpoints
-app.get("/api/standards", (req, res) => {
-  res.json(standards);
-});
-
-app.post("/api/standards", (req, res) => {
-  const newStandard = {
-    _id: Date.now().toString(),
-    ...req.body,
-  };
-  standards.push(newStandard);
-  res.json(newStandard);
-});
-
-// Planning endpoints
-app.get("/api/planning/weeks/:week/:year", (req, res) => {
-  const week = weeklyAssignments.find(
-    (w) =>
-      w.week === parseInt(req.params.week) &&
-      w.year === parseInt(req.params.year),
-  );
-  if (!week) {
-    const newWeek = {
-      _id: Date.now().toString(),
-      week: parseInt(req.params.week),
-      year: parseInt(req.params.year),
-      assignments: [],
-    };
-    weeklyAssignments.push(newWeek);
-    return res.json(newWeek);
-  }
-  res.json(week);
-});
-
-app.put("/api/planning/weeks/:week/:year", (req, res) => {
-  let week = weeklyAssignments.find(
-    (w) =>
-      w.week === parseInt(req.params.week) &&
-      w.year === parseInt(req.params.year),
-  );
-  if (!week) {
-    week = {
-      _id: Date.now().toString(),
-      week: parseInt(req.params.week),
-      year: parseInt(req.params.year),
-      assignments: [],
-    };
-    weeklyAssignments.push(week);
-  }
-  week.assignments = req.body.assignments || [];
-  res.json(week);
-});
-
-// Analytics endpoints
-app.get("/api/analytics/rotation", (req, res) => {
-  const rotation = operators.map((op) => ({
-    operatorId: op._id,
-    name: op.name,
-    totalAssignments: op.totalAssignments,
-    utilizationRate: Math.min(100, (op.totalAssignments * 8.33) % 100),
-    competenceCount: op.competences.length,
-  }));
-  res.json(rotation);
-});
-
-app.get("/api/analytics/standards", (req, res) => {
-  const standardUsage = standards.map((std) => {
-    const usage = weeklyAssignments
-      .flatMap((w) => w.assignments.filter((a) => a.standard === std.name))
-      .reduce((acc, a) => acc + a.days, 0);
-    const operatorCount = operators.filter((o) =>
-      o.competences.some((c) => c.standard === std.name),
-    ).length;
-    return {
-      standard: std.name,
-      totalDays: usage,
-      operatorCount,
-      criticality: std.criticality,
-    };
-  });
-  res.json(standardUsage);
-});
-
-// Setup endpoints - Competencies
-app.get("/api/setup/competencies", (req, res) => {
-  res.json(competencies);
-});
-
+// ===== Competencies =====
+app.get("/api/setup/competencies", (req, res) => res.json(competencies));
 app.post("/api/setup/competencies", (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: "Name required" });
@@ -270,25 +196,69 @@ app.post("/api/setup/competencies", (req, res) => {
   competencies.push(newItem);
   res.json(newItem);
 });
-
 app.put("/api/setup/competencies/:id", (req, res) => {
-  const { name } = req.body;
   const item = competencies.find((c) => c.id === req.params.id);
   if (!item) return res.status(404).json({ error: "Not found" });
-  item.name = name;
+  Object.assign(item, req.body);
   res.json(item);
 });
-
 app.delete("/api/setup/competencies/:id", (req, res) => {
   competencies = competencies.filter((c) => c.id !== req.params.id);
   res.json({ success: true });
 });
 
-// Setup endpoints - Teams
-app.get("/api/setup/teams", (req, res) => {
-  res.json(teams);
+// ===== Standards =====
+app.get("/api/standards", (req, res) => res.json(standards));
+app.post("/api/standards", (req, res) => {
+  const { name, department, criticality } = req.body;
+  if (!name) return res.status(400).json({ error: "Name required" });
+  const newStandard = {
+    _id: name.toLowerCase().replace(/\s+/g, "-"),
+    name,
+    department: department || "",
+    criticality: criticality || "medium",
+  };
+  standards.push(newStandard);
+  res.json(newStandard);
+});
+app.put("/api/standards/:id", (req, res) => {
+  const standard = standards.find((s) => s._id === req.params.id);
+  if (!standard) return res.status(404).json({ error: "Not found" });
+  Object.assign(standard, req.body);
+  res.json(standard);
+});
+app.delete("/api/standards/:id", (req, res) => {
+  standards = standards.filter((s) => s._id !== req.params.id);
+  res.json({ success: true });
 });
 
+// Setup standards (same as above)
+app.get("/api/setup/standards", (req, res) => res.json(standards));
+app.post("/api/setup/standards", (req, res) => {
+  const { name, department, criticality } = req.body;
+  if (!name) return res.status(400).json({ error: "Name required" });
+  const newStandard = {
+    _id: name.toLowerCase().replace(/\s+/g, "-"),
+    name,
+    department: department || "",
+    criticality: criticality || "medium",
+  };
+  standards.push(newStandard);
+  res.json(newStandard);
+});
+app.put("/api/setup/standards/:id", (req, res) => {
+  const standard = standards.find((s) => s._id === req.params.id);
+  if (!standard) return res.status(404).json({ error: "Not found" });
+  Object.assign(standard, req.body);
+  res.json(standard);
+});
+app.delete("/api/setup/standards/:id", (req, res) => {
+  standards = standards.filter((s) => s._id !== req.params.id);
+  res.json({ success: true });
+});
+
+// ===== Teams =====
+app.get("/api/setup/teams", (req, res) => res.json(teams));
 app.post("/api/setup/teams", (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: "Name required" });
@@ -296,25 +266,19 @@ app.post("/api/setup/teams", (req, res) => {
   teams.push(newItem);
   res.json(newItem);
 });
-
 app.put("/api/setup/teams/:id", (req, res) => {
-  const { name } = req.body;
   const item = teams.find((t) => t.id === req.params.id);
   if (!item) return res.status(404).json({ error: "Not found" });
-  item.name = name;
+  Object.assign(item, req.body);
   res.json(item);
 });
-
 app.delete("/api/setup/teams/:id", (req, res) => {
   teams = teams.filter((t) => t.id !== req.params.id);
   res.json({ success: true });
 });
 
-// Setup endpoints - Qualifications
-app.get("/api/setup/qualifications", (req, res) => {
-  res.json(qualifications);
-});
-
+// ===== Qualifications =====
+app.get("/api/setup/qualifications", (req, res) => res.json(qualifications));
 app.post("/api/setup/qualifications", (req, res) => {
   const { name } = req.body;
   if (!name) return res.status(400).json({ error: "Name required" });
@@ -322,31 +286,111 @@ app.post("/api/setup/qualifications", (req, res) => {
   qualifications.push(newItem);
   res.json(newItem);
 });
-
 app.put("/api/setup/qualifications/:id", (req, res) => {
-  const { name } = req.body;
   const item = qualifications.find((q) => q.id === req.params.id);
   if (!item) return res.status(404).json({ error: "Not found" });
-  item.name = name;
+  Object.assign(item, req.body);
   res.json(item);
 });
-
 app.delete("/api/setup/qualifications/:id", (req, res) => {
   qualifications = qualifications.filter((q) => q.id !== req.params.id);
   res.json({ success: true });
 });
 
-// Rotation endpoints
-app.get("/api/rotation", (req, res) => {
-  res.json(rotations);
+// ===== Planning =====
+app.get("/api/planning/weeks/:week/:year", (req, res) => {
+  const week = parseInt(req.params.week, 10);
+  const year = parseInt(req.params.year, 10);
+
+  let entry = weeklyAssignments.find((w) => w.week === week && w.year === year);
+
+  if (!entry) {
+    const approxMonday = new Date(year, 0, 4 + (week - 1) * 7);
+    const dateStr = approxMonday.toISOString().split("T")[0];
+
+    entry = {
+      _id: `w${year}-${String(week).padStart(2, "0")}`,
+      week,
+      year,
+      date: dateStr,
+      assignments: [],
+    };
+    weeklyAssignments.push(entry);
+  }
+
+  res.json(entry);
 });
 
+app.put("/api/planning/weeks/:week/:year", (req, res) => {
+  const week = parseInt(req.params.week, 10);
+  const year = parseInt(req.params.year, 10);
+
+  let entry = weeklyAssignments.find((w) => w.week === week && w.year === year);
+
+  if (!entry) {
+    const approxMonday = new Date(year, 0, 4 + (week - 1) * 7);
+    const dateStr = approxMonday.toISOString().split("T")[0];
+
+    entry = {
+      _id: `w${year}-${String(week).padStart(2, "0")}`,
+      week,
+      year,
+      date: dateStr,
+      assignments: [],
+    };
+    weeklyAssignments.push(entry);
+  }
+
+  entry.assignments = Array.isArray(req.body.assignments)
+    ? req.body.assignments
+    : [];
+  res.json(entry);
+});
+
+// ===== Analytics =====
+app.get("/api/analytics/rotation", (req, res) => {
+  const analytics = operators.map((op) => ({
+    operatorId: op._id,
+    name: op.name,
+    totalAssignments: op.totalAssignments,
+    // More meaningful utilization estimation:
+    // Rough: assuming ~220 working days/year → ~4.6 weeks per assignment if full week
+    utilizationRate: Math.min(100, Math.round(op.totalAssignments * 4.6)),
+    competenceCount: op.competences.length,
+  }));
+
+  res.json(analytics);
+});
+
+app.get("/api/analytics/standards", (req, res) => {
+  const standardsAnalytics = standards.map((std) => {
+    const operatorCount = operators.filter((op) =>
+      op.competences.some((comp) => comp.standard === std.name)
+    ).length;
+    
+    const totalDays = weeklyAssignments.reduce((sum, week) => {
+      return sum + week.assignments.filter((a) => a.standard === std.name)
+        .reduce((daySum, a) => daySum + (a.days || 0), 0);
+    }, 0);
+
+    return {
+      standard: std.name,
+      totalDays,
+      operatorCount,
+      criticality: std.criticality,
+    };
+  });
+
+  res.json(standardsAnalytics);
+});
+
+// ===== Rotations =====
+app.get("/api/rotation", (req, res) => res.json(rotations));
 app.get("/api/rotation/:id", (req, res) => {
   const rotation = rotations.find((r) => r._id === req.params.id);
   if (!rotation) return res.status(404).json({ error: "Rotation not found" });
   res.json(rotation);
 });
-
 app.post("/api/rotation", (req, res) => {
   const {
     fromOperatorId,
@@ -357,67 +401,59 @@ app.post("/api/rotation", (req, res) => {
     isAutomatic,
   } = req.body;
 
-  if (!fromOperatorId || !toOperatorId || !standard) {
+  if (!fromOperatorId || !toOperatorId || !standard)
     return res.status(400).json({ error: "Missing required fields" });
-  }
 
   const newRotation = {
     _id: Date.now().toString(),
     fromOperatorId,
     toOperatorId,
     standard,
-    reason,
+    reason: reason || "Manual rotation",
     scheduledDate,
-    isAutomatic: isAutomatic || false,
+    isAutomatic: !!isAutomatic,
     status: "pending",
     createdAt: new Date().toISOString(),
   };
-
   rotations.push(newRotation);
   res.json(newRotation);
 });
-
 app.put("/api/rotation/:id", (req, res) => {
   const rotation = rotations.find((r) => r._id === req.params.id);
   if (!rotation) return res.status(404).json({ error: "Rotation not found" });
   Object.assign(rotation, req.body);
   res.json(rotation);
 });
-
 app.delete("/api/rotation/:id", (req, res) => {
   rotations = rotations.filter((r) => r._id !== req.params.id);
   res.json({ success: true });
 });
 
-// Auto-rotation endpoint
+// Auto-rotation suggestions
 app.post("/api/rotation/auto/generate", (req, res) => {
   const suggestions = [];
+  const highUtil = operators.filter((op) => op.totalAssignments >= 14);
 
-  // Find operators with high utilization
-  const highUtilization = operators.filter((op) => op.totalAssignments > 15);
-
-  highUtilization.forEach((operator) => {
-    // Find other operators with same competence
-    const competences = operator.competences;
-    competences.forEach((comp) => {
-      const alternates = operators.filter(
+  highUtil.forEach((op) => {
+    op.competences.forEach((comp) => {
+      const candidates = operators.filter(
         (other) =>
-          other._id !== operator._id &&
+          other._id !== op._id &&
           other.competences.some((c) => c.standard === comp.standard) &&
-          other.totalAssignments < operator.totalAssignments - 3,
+          other.totalAssignments < op.totalAssignments - 2,
       );
 
-      alternates.forEach((alternate) => {
+      candidates.forEach((target) => {
         suggestions.push({
-          fromOperatorId: operator._id,
-          fromName: operator.name,
-          toOperatorId: alternate._id,
-          toName: alternate.name,
+          fromOperatorId: op._id,
+          fromName: op.name,
+          toOperatorId: target._id,
+          toName: target.name,
           standard: comp.standard,
-          reason: "Workload balancing - High utilization detected",
+          reason: "Workload balancing - high utilization detected",
           isAutomatic: true,
           priority:
-            operator.totalAssignments - alternate.totalAssignments > 5
+            op.totalAssignments - target.totalAssignments > 5
               ? "high"
               : "medium",
         });
@@ -428,6 +464,7 @@ app.post("/api/rotation/auto/generate", (req, res) => {
   res.json(suggestions);
 });
 
+// ===== Health check =====
 app.get("/api/health", (req, res) => {
   res.json({
     status: "ok",
@@ -447,5 +484,6 @@ app.get("/api/health", (req, res) => {
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`✓ Backend running on port ${PORT}`);
-  console.log(`✓ Competence-based Planning Tool API`);
+  console.log(`Try: http://localhost:${PORT}/api/health`);
+  console.log(`     http://localhost:${PORT}/api/analytics/rotation`);
 });

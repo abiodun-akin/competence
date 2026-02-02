@@ -12,6 +12,18 @@ export default function RotationPage({ operators }) {
     reason: "",
     scheduledDate: "",
   });
+  const [standardOptions, setStandardOptions] = useState([]);
+
+  useEffect(() => {
+    fetchSetupStandards();
+  }, []);
+
+  const fetchSetupStandards = async () => {
+    try {
+      const res = await fetch("http://localhost:3000/api/standards");
+      setStandardOptions(await res.json());
+    } catch (err) {}
+  };
 
   useEffect(() => {
     fetchRotations();
@@ -34,7 +46,7 @@ export default function RotationPage({ operators }) {
     try {
       const response = await fetch(
         "http://localhost:3000/api/rotation/auto/generate",
-        { method: "POST" }
+        { method: "POST" },
       );
       const data = await response.json();
       setSuggestions(data);
@@ -104,6 +116,17 @@ export default function RotationPage({ operators }) {
 
   return (
     <div className="rotation-page">
+      {/* Debug: Show standardOptions data */}
+      <pre
+        style={{
+          background: "#f8f8f8",
+          color: "#333",
+          padding: "8px",
+          fontSize: "0.9em",
+        }}
+      >
+        standardOptions: {JSON.stringify(standardOptions, null, 2)}
+      </pre>
       <h1>Operator Rotation</h1>
 
       <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
@@ -120,6 +143,16 @@ export default function RotationPage({ operators }) {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">Create Rotation</div>
             <form onSubmit={handleSubmit}>
+              <div
+                style={{
+                  marginBottom: "10px",
+                  color: "#888",
+                  fontSize: "0.98em",
+                }}
+              >
+                <strong>Note:</strong> You can manually adjust any field before
+                submitting, even after accepting an auto-suggestion.
+              </div>
               <div style={{ marginBottom: "15px" }}>
                 <label>From Operator:</label>
                 <select
@@ -158,15 +191,21 @@ export default function RotationPage({ operators }) {
               </div>
               <div style={{ marginBottom: "15px" }}>
                 <label>Standard:</label>
-                <input
-                  type="text"
+                <select
                   value={formData.standard}
                   onChange={(e) =>
                     setFormData({ ...formData, standard: e.target.value })
                   }
                   required
                   style={{ width: "100%", marginTop: "5px" }}
-                />
+                >
+                  <option value="">Select standard...</option>
+                  {standardOptions.map((std) => (
+                    <option key={std.id} value={std.name}>
+                      {std.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div style={{ marginBottom: "15px" }}>
                 <label>Reason:</label>

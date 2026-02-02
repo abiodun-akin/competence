@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function OperatorsPage({ operators, standards, onDataChange }) {
   const [showForm, setShowForm] = useState(false);
@@ -8,6 +8,27 @@ export default function OperatorsPage({ operators, standards, onDataChange }) {
     team: "",
     competences: [],
   });
+  const [teamOptions, setTeamOptions] = useState([]);
+  const [competencyOptions, setCompetencyOptions] = useState([]);
+
+  useEffect(() => {
+    fetchSetupOptions();
+  }, []);
+
+  const fetchSetupOptions = async () => {
+    try {
+      const [teamsRes, compsRes] = await Promise.all([
+        fetch("http://localhost:3000/api/setup/teams"),
+        fetch("http://localhost:3000/api/setup/competencies"),
+      ]);
+      const teams = await teamsRes.json();
+      const comps = await compsRes.json();
+      setTeamOptions(teams);
+      setCompetencyOptions(comps);
+    } catch (err) {
+      // fallback: do nothing
+    }
+  };
 
   const handleAddClick = () => {
     setEditingId(null);
@@ -50,9 +71,12 @@ export default function OperatorsPage({ operators, standards, onDataChange }) {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this operator?")) return;
     try {
-      const response = await fetch(`http://localhost:3000/api/operators/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `http://localhost:3000/api/operators/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (response.ok) {
         onDataChange();
       }
@@ -87,15 +111,44 @@ export default function OperatorsPage({ operators, standards, onDataChange }) {
               </div>
               <div style={{ marginBottom: "15px" }}>
                 <label>Team:</label>
-                <input
-                  type="text"
+                <select
                   value={formData.team}
                   onChange={(e) =>
                     setFormData({ ...formData, team: e.target.value })
                   }
                   required
                   style={{ width: "100%", marginTop: "5px" }}
-                />
+                >
+                  <option value="">Select team...</option>
+                  {teamOptions.map((team) => (
+                    <option key={team.id} value={team.name}>
+                      {team.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ marginBottom: "15px" }}>
+                <label>Competences:</label>
+                <select
+                  multiple
+                  value={formData.competences.map((c) => c.standard)}
+                  onChange={(e) => {
+                    const selected = Array.from(e.target.selectedOptions).map(
+                      (opt) => opt.value,
+                    );
+                    setFormData({
+                      ...formData,
+                      competences: selected.map((std) => ({ standard: std })),
+                    });
+                  }}
+                  style={{ width: "100%", marginTop: "5px", height: "80px" }}
+                >
+                  {competencyOptions.map((comp) => (
+                    <option key={comp.id} value={comp.name}>
+                      {comp.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="modal-footer">
                 <button

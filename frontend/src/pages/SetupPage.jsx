@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 
 export default function SetupPage() {
-  const [tab, setTab] = useState("competencies");
+  const [tab, setTab] = useState("standards");
   const [competencies, setCompetencies] = useState([]);
   const [teams, setTeams] = useState([]);
   const [qualifications, setQualifications] = useState([]);
+  const [standards, setStandards] = useState([]);
   const [newItem, setNewItem] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -15,17 +16,20 @@ export default function SetupPage() {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [compRes, teamRes, qualRes] = await Promise.all([
+      const [compRes, teamRes, qualRes, stdRes] = await Promise.all([
         fetch("http://localhost:3000/api/setup/competencies"),
         fetch("http://localhost:3000/api/setup/teams"),
         fetch("http://localhost:3000/api/setup/qualifications"),
+        fetch("http://localhost:3000/api/standards"),
       ]);
       const compData = await compRes.json();
       const teamData = await teamRes.json();
       const qualData = await qualRes.json();
+      const stdData = await stdRes.json();
       setCompetencies(compData);
       setTeams(teamData);
       setQualifications(qualData);
+      setStandards(stdData);
     } catch (err) {
       alert("Error fetching setup data: " + err.message);
     }
@@ -35,12 +39,14 @@ export default function SetupPage() {
   const handleAdd = async () => {
     if (!newItem.trim()) return;
 
-    const endpoint =
-      tab === "competencies"
-        ? "http://localhost:3000/api/setup/competencies"
-        : tab === "teams"
-          ? "http://localhost:3000/api/setup/teams"
-          : "http://localhost:3000/api/setup/qualifications";
+    let endpoint = "";
+    if (tab === "competencies")
+      endpoint = "http://localhost:3000/api/setup/competencies";
+    else if (tab === "teams")
+      endpoint = "http://localhost:3000/api/setup/teams";
+    else if (tab === "standards")
+      endpoint = "http://localhost:3000/api/standards";
+    else endpoint = "http://localhost:3000/api/setup/qualifications";
 
     try {
       const response = await fetch(endpoint, {
@@ -58,12 +64,14 @@ export default function SetupPage() {
   };
 
   const handleDelete = async (id) => {
-    const endpoint =
-      tab === "competencies"
-        ? `http://localhost:3000/api/setup/competencies/${id}`
-        : tab === "teams"
-          ? `http://localhost:3000/api/setup/teams/${id}`
-          : `http://localhost:3000/api/setup/qualifications/${id}`;
+    let endpoint = "";
+    if (tab === "competencies")
+      endpoint = `http://localhost:3000/api/setup/competencies/${id}`;
+    else if (tab === "teams")
+      endpoint = `http://localhost:3000/api/setup/teams/${id}`;
+    else if (tab === "standards")
+      endpoint = `http://localhost:3000/api/standards/${id}`;
+    else endpoint = `http://localhost:3000/api/setup/qualifications/${id}`;
 
     try {
       const response = await fetch(endpoint, { method: "DELETE" });
@@ -76,7 +84,13 @@ export default function SetupPage() {
   };
 
   const currentData =
-    tab === "competencies" ? competencies : tab === "teams" ? teams : qualifications;
+    tab === "competencies"
+      ? competencies
+      : tab === "teams"
+        ? teams
+        : tab === "standards"
+          ? standards
+          : qualifications;
 
   return (
     <div className="setup-page">
@@ -90,33 +104,20 @@ export default function SetupPage() {
           borderBottom: "2px solid #eee",
         }}
       >
-        <button
-          onClick={() => setTab("competencies")}
-          style={{
-            backgroundColor: tab === "competencies" ? "#3498db" : "#95a5a6",
-            borderRadius: "0",
-          }}
-        >
-          Competencies
-        </button>
-        <button
-          onClick={() => setTab("teams")}
-          style={{
-            backgroundColor: tab === "teams" ? "#3498db" : "#95a5a6",
-            borderRadius: "0",
-          }}
-        >
-          Teams
-        </button>
-        <button
-          onClick={() => setTab("qualifications")}
-          style={{
-            backgroundColor: tab === "qualifications" ? "#3498db" : "#95a5a6",
-            borderRadius: "0",
-          }}
-        >
-          Qualifications
-        </button>
+        {["competencies", "teams", "standards", "qualifications"].map(
+          (tabName) => (
+            <button
+              key={tabName}
+              onClick={() => setTab(tabName)}
+              style={{
+                backgroundColor: tab === tabName ? "#3498db" : "#95a5a6",
+                borderRadius: "0",
+              }}
+            >
+              {tabName.charAt(0).toUpperCase() + tabName.slice(1)}
+            </button>
+          ),
+        )}
       </div>
 
       {loading ? (
@@ -128,7 +129,9 @@ export default function SetupPage() {
               ? "Competencies Management"
               : tab === "teams"
                 ? "Teams Management"
-                : "Qualifications Management"}
+                : tab === "standards"
+                  ? "Standards Management"
+                  : "Qualifications Management"}
           </div>
 
           <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
@@ -152,12 +155,12 @@ export default function SetupPage() {
             </thead>
             <tbody>
               {currentData.map((item) => (
-                <tr key={item.id}>
+                <tr key={item._id || item.id}>
                   <td>{item.name}</td>
                   <td>
                     <button
                       className="danger"
-                      onClick={() => handleDelete(item.id)}
+                      onClick={() => handleDelete(item._id || item.id)}
                     >
                       Delete
                     </button>

@@ -7,38 +7,37 @@ export default function Navigation({
   onLogout,
 }) {
   const navItems = [
-    { id: "dashboard", label: "📊 Dashboard", icon: "📊" },
-    { id: "operators", label: "👥 Operators", icon: "👥" },
-    { id: "planning", label: "📅 Planning", icon: "📅" },
-    { id: "rotation", label: "🔄 Rotation", icon: "🔄" },
-    { id: "analytics", label: "📈 Analytics", icon: "📈" },
-    { id: "setup", label: "⚙️ Setup", icon: "⚙️" },
+    { id: "dashboard", label: "Dashboard" },
+    { id: "operators", label: "Operators" },
+    { id: "planning", label: "Planning" },
+    { id: "rotation", label: "Rotation" },
+    { id: "analytics", label: "Analytics" },
+    { id: "setup", label: "Setup" },
   ];
 
   return (
-    <nav className="navbar">
-      <div className="navbar-brand">
-        <h1 className="brand-title">🔧 Competence Planning Tool</h1>
+    <nav className="navbar modern-navbar">
+      <div className="navbar-brand modern-navbar-brand">
+        <h1 className="brand-title">Competence Planning Tool</h1>
         <p className="brand-subtitle">
           Workforce Allocation & Rotation Management
         </p>
       </div>
-      <ul className="nav-menu">
+      <ul className="nav-menu modern-nav-menu">
         {navItems.map((item) => (
           <li key={item.id}>
             <button
-              className={`nav-link ${currentPage === item.id ? "active" : ""}`}
+              className={`nav-link modern-nav-link ${currentPage === item.id ? "active" : ""}`}
               onClick={() => setCurrentPage(item.id)}
             >
-              <span className="icon">{item.icon}</span>
               <span className="label">{item.label}</span>
             </button>
           </li>
         ))}
       </ul>
-      <div className="navbar-user">
-        <span className="user-info">👤 {currentUser?.username}</span>
-        <button onClick={onLogout} className="btn-logout">
+      <div className="navbar-user modern-navbar-user">
+        <span className="user-info">{currentUser?.username}</span>
+        <button onClick={onLogout} className="btn-logout modern-btn-logout">
           Logout
         </button>
       </div>
