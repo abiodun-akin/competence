@@ -9,7 +9,8 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import SetupPage from "./pages/SetupPage";
 import RotationPage from "./pages/RotationPage";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+// Hardcoded production URL
+const API_BASE_URL = "https://competence-backend.onrender.com";
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -36,8 +37,12 @@ export default function App() {
     try {
       const res = await fetch(url, {
         method: 'GET',
-        mode: 'cors',                    // Explicitly set CORS mode
-        credentials: 'same-origin',      // Safe default
+        // 'cors' is required for cross-domain Render setups
+        mode: 'cors', 
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
       });
 
       if (!res.ok) {
@@ -45,16 +50,17 @@ export default function App() {
         try {
           const errorData = await res.json();
           errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          // Could not parse JSON → fallback to status text
-        }
-        throw new Error(`Fetch failed for ${url.split('/').pop()}: ${errorMessage}`);
+        } catch { /* ignore parse errors */ }
+        throw new Error(errorMessage);
       }
 
       return await res.json();
     } catch (err) {
-      console.error(`Detailed fetch error for ${url}:`, err);
-      throw err; // Re-throw so Promise.all can catch it
+      // Catch "Failed to fetch" which usually means server is down or CORS failed
+      if (err.message === "Failed to fetch") {
+        throw new Error("Cannot connect to server. It may be starting up—please wait 30 seconds and try again.");
+      }
+      throw err;
     }
   };
 
@@ -70,11 +76,8 @@ export default function App() {
 
       setOperators(opsData);
       setStandards(stdData);
-      setError(null);
     } catch (err) {
-      const errorMsg = err.message || "Unknown error during data fetch";
-      console.error("Data loading failed:", err);
-      setError(errorMsg);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -92,59 +95,39 @@ export default function App() {
     setCurrentUser(null);
     localStorage.removeItem("authToken");
     localStorage.removeItem("currentUser");
-    setError(null); // Clear any previous errors on logout
+    setError(null);
   };
 
   const renderPage = () => {
     if (loading && currentPage !== "setup") {
       return (
-        <div className="loading">
+        <div className="loading" style={{ textAlign: 'center', padding: '50px' }}>
           <div className="spinner"></div>
-          Loading data...
+          <p>Connecting to backend... (May take 30s on first load)</p>
         </div>
       );
     }
 
     if (error) {
       return (
-        <div className="error-message" style={{ color: 'red', padding: '20px', textAlign: 'center' }}>
-          <strong>⚠ Connection / Data Error</strong>
-          <br />
-          {error}
-          <br /><br />
-          <small>(Check browser console (F12 → Console) for more details)</small>
-          <br />
-          <button 
-            onClick={() => { setError(null); fetchData(); }} 
-            style={{ marginTop: '10px', padding: '8px 16px' }}
-          >
-            Try Again
+        <div className="error-message" style={{ color: '#d9534f', padding: '40px', textAlign: 'center' }}>
+          <h3>⚠ Connection Error</h3>
+          <p>{error}</p>
+          <button onClick={fetchData} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+            Retry Connection
           </button>
         </div>
       );
     }
 
     switch (currentPage) {
-      case "dashboard":
-        return <Dashboard operators={operators} standards={standards} />;
-      case "operators":
-        return (
-          <OperatorsPage
-            operators={operators}
-            standards={standards}
-            onDataChange={fetchData}
-          />
-        );
-      case "planning":
-        return <PlanningPage operators={operators} standards={standards} />;
-      case "analytics":
-        return <AnalyticsPage operators={operators} standards={standards} />;
-      case "rotation":
-        return <RotationPage operators={operators} />;
-      case "setup":
-        return <SetupPage />;
-      default:
-        return <Dashboard operators={operators} standards={standards} />;
+      case "dashboard": return <Dashboard operators={operators} standards={standards} />;
+      case "operators": return <OperatorsPage operators={operators} standards={standards} onDataChange={fetchData} />;
+      case "planning": return <PlanningPage operators={operators} standards={standards} />;
+      case "analytics": return <AnalyticsPage operators={operators} standards={standards} />;
+      case "rotation": return <RotationPage operators={operators} />;
+      case "setup": return <SetupPage />;
+      default: return <Dashboard operators={operators} standards={standards} />;
     }
   };
 
