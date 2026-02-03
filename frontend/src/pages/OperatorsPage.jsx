@@ -184,4 +184,43 @@ export default function OperatorsPage({ operators, standards, onDataChange }) {
           </thead>
           <tbody>
             {operators.map((op) => (
-              <tr key={op._id
+              <tr key={op._id}>
+                <td>{op.name}</td>
+                <td>{op.team}</td>
+                <td>
+                  {op.competences.map((c) => (
+                    <span key={c.standard} className="badge expert">
+                      {c.standard}
+                    </span>
+                  ))}
+                </td>
+                <td>
+                  <span
+                    className={`badge ${op.status === "active" ? "active" : "inactive"}`}
+                  >
+                    {op.status}
+                  </span>
+                </td>
+                <td>
+                  <button
+                    className="secondary"
+                    onClick={() => handleEditClick(op)}
+                    style={{ marginRight: "5px" }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="danger"
+                    onClick={() => handleDelete(op._id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
