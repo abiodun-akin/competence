@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 
+// Use the environment variable for the API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 export default function PlanningPage({ operators, standards }) {
   const [week, setWeek] = useState(1);
   const [year, setYear] = useState(2026);
@@ -14,9 +17,10 @@ export default function PlanningPage({ operators, standards }) {
 
   const fetchSetupOptions = async () => {
     try {
+      // Replaced localhost with API_BASE_URL
       const [teamsRes, standardsRes] = await Promise.all([
-        fetch("http://localhost:3000/api/setup/teams"),
-        fetch("http://localhost:3000/api/setup/standards"),
+        fetch(`${API_BASE_URL}/api/setup/teams`),
+        fetch(`${API_BASE_URL}/api/setup/standards`),
       ]);
       setTeamOptions(await teamsRes.json());
       setStandardOptions(await standardsRes.json());
@@ -30,8 +34,9 @@ export default function PlanningPage({ operators, standards }) {
   const fetchWeekAssignments = async () => {
     setLoading(true);
     try {
+      // Replaced localhost with API_BASE_URL
       const response = await fetch(
-        `http://localhost:3000/api/planning/weeks/${week}/${year}`,
+        `${API_BASE_URL}/api/planning/weeks/${week}/${year}`,
       );
       const data = await response.json();
       setAssignments(data.assignments || []);
@@ -64,8 +69,9 @@ export default function PlanningPage({ operators, standards }) {
   const handleSave = async () => {
     setLoading(true);
     try {
+      // Replaced localhost with API_BASE_URL
       const response = await fetch(
-        `http://localhost:3000/api/planning/weeks/${week}/${year}`,
+        `${API_BASE_URL}/api/planning/weeks/${week}/${year}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
