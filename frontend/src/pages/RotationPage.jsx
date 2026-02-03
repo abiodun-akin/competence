@@ -19,24 +19,21 @@ export default function RotationPage({ operators }) {
 
   useEffect(() => {
     fetchSetupStandards();
+    fetchRotations();
   }, []);
 
   const fetchSetupStandards = async () => {
     try {
-      // Replaced localhost with API_BASE_URL
       const res = await fetch(`${API_BASE_URL}/api/standards`);
       setStandardOptions(await res.json());
-    } catch (err) {}
+    } catch (err) {
+      console.error("Failed to fetch standards", err);
+    }
   };
-
-  useEffect(() => {
-    fetchRotations();
-  }, []);
 
   const fetchRotations = async () => {
     setLoading(true);
     try {
-      // Replaced localhost with API_BASE_URL
       const response = await fetch(`${API_BASE_URL}/api/rotation`);
       const data = await response.json();
       setRotations(data);
@@ -49,7 +46,6 @@ export default function RotationPage({ operators }) {
   const handleGenerateSuggestions = async () => {
     setLoading(true);
     try {
-      // Replaced localhost with API_BASE_URL
       const response = await fetch(
         `${API_BASE_URL}/api/rotation/auto/generate`,
         { method: "POST" },
@@ -77,7 +73,6 @@ export default function RotationPage({ operators }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Replaced localhost with API_BASE_URL
       const response = await fetch(`${API_BASE_URL}/api/rotation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,7 +96,6 @@ export default function RotationPage({ operators }) {
 
   const handleApprove = async (id) => {
     try {
-      // Replaced localhost with API_BASE_URL
       const response = await fetch(`${API_BASE_URL}/api/rotation/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -124,16 +118,7 @@ export default function RotationPage({ operators }) {
 
   return (
     <div className="rotation-page">
-      <pre
-        style={{
-          background: "#f8f8f8",
-          color: "#333",
-          padding: "8px",
-          fontSize: "0.9em",
-        }}
-      >
-        standardOptions: {JSON.stringify(standardOptions, null, 2)}
-      </pre>
+      {/* Debug section removed from here */}
       <h1>Operator Rotation</h1>
 
       <div style={{ marginBottom: "20px", display: "flex", gap: "10px" }}>
@@ -208,7 +193,7 @@ export default function RotationPage({ operators }) {
                 >
                   <option value="">Select standard...</option>
                   {standardOptions.map((std) => (
-                    <option key={std.id} value={std.name}>
+                    <option key={std._id || std.id} value={std.name}>
                       {std.name}
                     </option>
                   ))}
