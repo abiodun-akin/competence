@@ -9,8 +9,8 @@ import AnalyticsPage from "./pages/AnalyticsPage";
 import SetupPage from "./pages/SetupPage";
 import RotationPage from "./pages/RotationPage";
 
-// Hardcoded production URL
-const API_BASE_URL = "https://competence-backend.onrender.com";
+// Use environment variable instead of hardcoded production URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -37,7 +37,6 @@ export default function App() {
     try {
       const res = await fetch(url, {
         method: 'GET',
-        // 'cors' is required for cross-domain Render setups
         mode: 'cors', 
         headers: {
           'Accept': 'application/json',
@@ -56,7 +55,6 @@ export default function App() {
 
       return await res.json();
     } catch (err) {
-      // Catch "Failed to fetch" which usually means server is down or CORS failed
       if (err.message === "Failed to fetch") {
         throw new Error("Cannot connect to server. It may be starting up—please wait for 30 seconds and try again.");
       }
@@ -67,6 +65,13 @@ export default function App() {
   const fetchData = async () => {
     setLoading(true);
     setError(null);
+
+    // Ensure API_BASE_URL exists before fetching
+    if (!API_BASE_URL) {
+      setError("API URL configuration missing.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const [opsData, stdData] = await Promise.all([
