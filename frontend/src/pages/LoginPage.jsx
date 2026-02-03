@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 
+// Use the environment variable for the URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 export default function LoginPage({ onLogin }) {
   const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("admin123");
@@ -11,7 +14,8 @@ export default function LoginPage({ onLogin }) {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
+      // Swapped hardcoded localhost for the env-based API_BASE_URL
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
