@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 
+// Use the environment variable for the API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 export default function RotationPage({ operators }) {
   const [rotations, setRotations] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
@@ -20,7 +23,8 @@ export default function RotationPage({ operators }) {
 
   const fetchSetupStandards = async () => {
     try {
-      const res = await fetch("http://localhost:3000/api/standards");
+      // Replaced localhost with API_BASE_URL
+      const res = await fetch(`${API_BASE_URL}/api/standards`);
       setStandardOptions(await res.json());
     } catch (err) {}
   };
@@ -32,7 +36,8 @@ export default function RotationPage({ operators }) {
   const fetchRotations = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/api/rotation");
+      // Replaced localhost with API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/rotation`);
       const data = await response.json();
       setRotations(data);
     } catch (err) {
@@ -44,8 +49,9 @@ export default function RotationPage({ operators }) {
   const handleGenerateSuggestions = async () => {
     setLoading(true);
     try {
+      // Replaced localhost with API_BASE_URL
       const response = await fetch(
-        "http://localhost:3000/api/rotation/auto/generate",
+        `${API_BASE_URL}/api/rotation/auto/generate`,
         { method: "POST" },
       );
       const data = await response.json();
@@ -71,7 +77,8 @@ export default function RotationPage({ operators }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3000/api/rotation", {
+      // Replaced localhost with API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/rotation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
@@ -94,7 +101,8 @@ export default function RotationPage({ operators }) {
 
   const handleApprove = async (id) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/rotation/${id}`, {
+      // Replaced localhost with API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/rotation/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "approved" }),
@@ -116,7 +124,6 @@ export default function RotationPage({ operators }) {
 
   return (
     <div className="rotation-page">
-      {/* Debug: Show standardOptions data */}
       <pre
         style={{
           background: "#f8f8f8",
