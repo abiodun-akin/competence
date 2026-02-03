@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from "react";
 
+// Use the environment variable for the API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL;
+
 export default function OperatorsPage({ operators, standards, onDataChange }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -17,9 +20,10 @@ export default function OperatorsPage({ operators, standards, onDataChange }) {
 
   const fetchSetupOptions = async () => {
     try {
+      // Replaced localhost with API_BASE_URL
       const [teamsRes, compsRes] = await Promise.all([
-        fetch("http://localhost:3000/api/setup/teams"),
-        fetch("http://localhost:3000/api/setup/competencies"),
+        fetch(`${API_BASE_URL}/api/setup/teams`),
+        fetch(`${API_BASE_URL}/api/setup/competencies`),
       ]);
       const teams = await teamsRes.json();
       const comps = await compsRes.json();
@@ -49,9 +53,10 @@ export default function OperatorsPage({ operators, standards, onDataChange }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const method = editingId ? "PUT" : "POST";
+    // Replaced localhost with API_BASE_URL
     const url = editingId
-      ? `http://localhost:3000/api/operators/${editingId}`
-      : "http://localhost:3000/api/operators";
+      ? `${API_BASE_URL}/api/operators/${editingId}`
+      : `${API_BASE_URL}/api/operators`;
 
     try {
       const response = await fetch(url, {
@@ -71,8 +76,9 @@ export default function OperatorsPage({ operators, standards, onDataChange }) {
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this operator?")) return;
     try {
+      // Replaced localhost with API_BASE_URL
       const response = await fetch(
-        `http://localhost:3000/api/operators/${id}`,
+        `${API_BASE_URL}/api/operators/${id}`,
         {
           method: "DELETE",
         },
@@ -178,43 +184,4 @@ export default function OperatorsPage({ operators, standards, onDataChange }) {
           </thead>
           <tbody>
             {operators.map((op) => (
-              <tr key={op._id}>
-                <td>{op.name}</td>
-                <td>{op.team}</td>
-                <td>
-                  {op.competences.map((c) => (
-                    <span key={c.standard} className="badge expert">
-                      {c.standard}
-                    </span>
-                  ))}
-                </td>
-                <td>
-                  <span
-                    className={`badge ${op.status === "active" ? "active" : "inactive"}`}
-                  >
-                    {op.status}
-                  </span>
-                </td>
-                <td>
-                  <button
-                    className="secondary"
-                    onClick={() => handleEditClick(op)}
-                    style={{ marginRight: "5px" }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="danger"
-                    onClick={() => handleDelete(op._id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
+              <tr key={op._id
