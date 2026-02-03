@@ -58,7 +58,7 @@ export default function App() {
     } catch (err) {
       // Catch "Failed to fetch" which usually means server is down or CORS failed
       if (err.message === "Failed to fetch") {
-        throw new Error("Cannot connect to server. It may be starting up—please wait 30 seconds and try again.");
+        throw new Error("Cannot connect to server. It may be starting up—please wait for 30 seconds and try again.");
       }
       throw err;
     }
